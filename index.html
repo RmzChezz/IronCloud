@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#7c3aed">
 <title>IronCloud</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.0/css/all.min.css">
 <script>
   (function() {
     var t = localStorage.getItem('ic_theme_v6') || 'violet';
@@ -391,6 +391,13 @@
   .photo-viewer-prev { left: 30px; }
   .photo-viewer-next { right: 30px; }
   .photo-viewer-prev:hover, .photo-viewer-next:hover { background: var(--bg-1); transform: translateY(-50%) scale(1.1); }
+  .loading-screen { position: fixed; inset: 0; background: linear-gradient(180deg, #b9a9e3 0%, #a18fd6 100%); z-index: 9500; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; transition: opacity 0.3s; }
+  .loading-screen.hidden { opacity: 0; pointer-events: none; }
+  .loading-screen .loading-logo { font-size: 72px; font-weight: 900; color: #2a1a55; font-family: 'Comic Sans MS', cursive; letter-spacing: -3px; animation: pulse-logo 1.5s ease-in-out infinite; }
+  @keyframes pulse-logo { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+  .loading-screen .loading-spinner { width: 50px; height: 50px; border: 5px solid #2a1a55; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-screen .loading-text { color: #4a3a80; font-family: 'Comic Sans MS', cursive; font-size: 16px; font-weight: bold; }
   ::-webkit-scrollbar { width: 10px; height: 10px; }
   ::-webkit-scrollbar-track { background: var(--bg-3); }
   ::-webkit-scrollbar-thumb { background: var(--dark); border-radius: 5px; border: 2px solid var(--bg-3); }
@@ -427,6 +434,14 @@
 </head>
 <body>
 
+<!-- LOADING SCREEN -->
+<div class="loading-screen" id="loadingScreen">
+  <div class="loading-logo">IC</div>
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Подключение...</div>
+</div>
+
+<!-- AUTH -->
 <div class="auth-screen" id="authScreen">
   <div class="auth-card">
     <div class="auth-logo">IC</div>
@@ -453,6 +468,7 @@
   </div>
 </div>
 
+<!-- 2FA -->
 <div class="auth-screen" id="twoFAScreen">
   <div class="auth-card">
     <div class="auth-logo" style="font-size:38px;"><i class="fas fa-shield-alt" style="color:var(--accent);"></i></div>
@@ -475,6 +491,7 @@
   </div>
 </div>
 
+<!-- HEADER -->
 <header>
   <div class="logo" onclick="scrollTo({top:0,behavior:'smooth'})">IC</div>
   <div class="header-search"><i class="fas fa-search"></i><input type="text" id="globalSearch" placeholder="Поиск..."></div>
@@ -493,6 +510,7 @@
   </div>
 </header>
 
+<!-- CONTAINER -->
 <div class="container">
   <div class="toolbar">
     <div class="toolbar-left">
@@ -518,6 +536,7 @@
   <main class="grid" id="grid"></main>
 </div>
 
+<!-- FILTERS -->
 <div class="filters-overlay" id="filtersOverlay"></div>
 <aside class="filters-panel" id="filtersPanel">
   <div class="filters-header"><h3><i class="fas fa-filter"></i> Фильтры</h3><button class="modal-close" onclick="closeFilters()"><i class="fas fa-times"></i></button></div>
@@ -564,6 +583,7 @@
   </div>
 </aside>
 
+<!-- BOTTOM -->
 <div style="position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-around;align-items:center;padding:12px 20px;background:var(--bg-2);border-top:2px solid var(--border-light);z-index:100;">
   <button class="icon-btn" onclick="openFilters()"><i class="fas fa-filter"></i></button>
   <button class="icon-btn" onclick="openAddAd()" style="background:var(--dark);color:var(--bg-1);border-color:var(--dark);"><i class="fas fa-plus"></i></button>
@@ -572,8 +592,10 @@
   <button class="icon-btn" onclick="openChat()"><i class="fas fa-comments"></i></button>
 </div>
 
+<!-- MODAL -->
 <div class="modal-bg" id="modalBg"><div class="modal" id="modalContent"></div></div>
 
+<!-- CHAT -->
 <div class="chat-overlay" id="chatOverlay" onclick="closeChat()"></div>
 <div class="chat-panel" id="chatPanel">
   <div class="chat-header"><h3><i class="fas fa-comments"></i> <span id="chatPanelTitle">Мои чаты</span></h3><button class="modal-close" onclick="closeChat()"><i class="fas fa-times"></i></button></div>
@@ -595,6 +617,7 @@
   </div>
 </div>
 
+<!-- TOAST + PUSH + VIEWER -->
 <div class="toast-container" id="toastContainer"></div>
 <div class="push-notification" id="pushNotification" onclick="dismissPush()">
   <div class="push-icon" id="pushIcon"><i class="fas fa-bell"></i></div>
@@ -608,9 +631,9 @@
 </div>
 
 <script type="module">
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import { initializeApp } from 'https://cdn.jsdelivr.net/npm/firebase@10.7.1/firebase-app.js';
 import { getDatabase, ref, set, get, update, remove, onValue, push, onDisconnect }
-  from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+  from 'https://cdn.jsdelivr.net/npm/firebase@10.7.1/firebase-database.js';
 
 const FB_URL = 'https://ironcloud-9e32d-default-rtdb.europe-west1.firebasedatabase.app/';
 const SUPER_ADMIN = 'admin';
@@ -624,8 +647,24 @@ const $ = (s, p = document) => p.querySelector(s);
 const $$ = (s, p = document) => [...p.querySelectorAll(s)];
 const uid = () => Date.now() + Math.floor(Math.random() * 1000);
 
-const app = initializeApp({ databaseURL: FB_URL }, 'ironcloud-v8');
-const db = getDatabase(app);
+function hideLoading() {
+  const ls = document.getElementById('loadingScreen');
+  if (ls) ls.classList.add('hidden');
+}
+function showAuth() {
+  hideLoading();
+  $('#authScreen').classList.add('active');
+}
+function hideAuth() { $('#authScreen').classList.remove('active'); }
+
+let app, db;
+try {
+  app = initializeApp({ databaseURL: FB_URL }, 'ironcloud-v9');
+  db = getDatabase(app);
+} catch (e) {
+  console.error('Firebase init error:', e);
+  showAuth();
+}
 const r = (p) => ref(db, p);
 
 let state = {
@@ -639,7 +678,6 @@ let state = {
   bookingAd: null, bookingStart: null, bookingEnd: null, bookingMonth: null,
 };
 
-// ===== HELPERS =====
 function hashPassword(p) { let h = 0; for (let i = 0; i < p.length; i++) { h = ((h << 5) - h) + p.charCodeAt(i); h |= 0; } return 'h' + Math.abs(h).toString(36) + '_' + p.length; }
 function stringToColor(s) { const cs = [['#7c3aed','#9333ea'],['#ec4899','#db2777'],['#3b82f6','#2563eb'],['#22c55e','#16a34a'],['#f59e0b','#d97706'],['#06b6d4','#0891b2'],['#ef4444','#dc2626'],['#8b5cf6','#7c3aed']]; let h = 0; for (let i = 0; i < s.length; i++) h = s.charCodeAt(i) + ((h << 5) - h); return cs[Math.abs(h) % cs.length]; }
 function timeAgo(ts) { const d = Date.now() - ts, s = Math.floor(d / 1000); if (s < 60) return 'только что'; const m = Math.floor(s / 60); if (m < 60) return m + ' мин'; const h = Math.floor(m / 60); if (h < 24) return h + ' ч'; const dd = Math.floor(h / 24); if (dd < 30) return dd + ' дн'; return new Date(ts).toLocaleDateString('ru-RU'); }
@@ -653,7 +691,6 @@ function isHidden(id) { return state.hidden.includes(Number(id)); }
 function isOnline(n) { const t = state.online[n]; return t && (Date.now() - t.time < ONLINE_TIMEOUT); }
 function getOnlineCount() { const now = Date.now(); return Object.keys(state.online).filter(k => now - state.online[k].time < ONLINE_TIMEOUT).length; }
 
-// ===== TOAST / PUSH / SOUND =====
 function toast(msg, type = 'success', icon = null) {
   const icons = { success: 'fa-check-circle', error: 'fa-exclamation-circle', info: 'fa-info-circle', warning: 'fa-exclamation-triangle' };
   const el = document.createElement('div');
@@ -672,7 +709,6 @@ function pushNotify(t, txt, icon = 'fa-bell') {
 function dismissPush() { $('#pushNotification').classList.remove('active'); }
 function playSound(f = 800, d = 0.1) { try { const ctx = new (window.AudioContext || window.webkitAudioContext)(); const o = ctx.createOscillator(), g = ctx.createGain(); o.connect(g); g.connect(ctx.destination); o.frequency.value = f; g.gain.setValueAtTime(0.08, ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + d); o.start(); o.stop(ctx.currentTime + d); } catch (e) {} }
 
-// ===== THEME =====
 const THEMES = {
   violet: { '--bg-1':'#b9a9e3','--bg-2':'#a595e0','--bg-3':'#8f7fd0','--bg-4':'#9d8dd8','--card':'#8f7fd0','--card-hover':'#9d8dd8','--dark':'#2a1a55','--dark-2':'#1a1235','--dark-3':'#4a3a80','--input-bg':'#e8dfff','--border':'#2a1a55','--border-light':'#7c6ac0','--text':'#1a1235' },
   dark: { '--bg-1':'#0f0a1e','--bg-2':'#1a1235','--bg-3':'#2a1a55','--bg-4':'#3a2a75','--card':'#1e1540','--card-hover':'#2a1d5c','--dark':'#a78bfa','--dark-2':'#7c3aed','--dark-3':'#b8b0d4','--input-bg':'#150e30','--border':'#3d2d75','--border-light':'#4d3d95','--text':'#ffffff' },
@@ -688,20 +724,18 @@ function applyTheme(name) {
 function changeTheme(n) { applyTheme(n); }
 function getTheme() { return localStorage.getItem('ic_theme_v6') || 'violet'; }
 
-// ===== FIRESTORE SUBS =====
-function subUsers() { onValue(r('users'), s => { window.__users = s.val() || {}; }); }
-function subServers() { onValue(r('servers'), s => { const d = s.val() || {}; state.servers = Object.entries(d).map(([id, v]) => ({ id: Number(id), ...v })); render(); }); }
-function subChats() { onValue(r('chats'), s => { const d = s.val() || {}; state.chats = Object.entries(d).map(([id, v]) => ({ id, ...v })); renderChatList(); if (state.activeChatId) renderMessages(); }); }
-function subReviews() { onValue(r('reviews'), s => { state.reviews = s.val() || {}; }); }
-function subBanned() { onValue(r('banned'), s => { const d = s.val() || {}; state.banned = Object.keys(d).filter(k => d[k]); render(); }); }
-function subMods() { onValue(r('mods'), s => { const d = s.val() || {}; state.mods = Object.keys(d).filter(k => d[k]); checkAdminUI(); render(); }); }
-function subHidden() { onValue(r('hidden'), s => { const d = s.val() || {}; state.hidden = Object.keys(d).filter(k => d[k]).map(Number); render(); }); }
-function subOnline() { onValue(r('online'), s => { state.online = s.val() || {}; updateOnlineUI(); }); }
+function subUsers() { try { onValue(r('users'), s => { window.__users = s.val() || {}; }); } catch (e) {} }
+function subServers() { try { onValue(r('servers'), s => { const d = s.val() || {}; state.servers = Object.entries(d).map(([id, v]) => ({ id: Number(id), ...v })); render(); }); } catch (e) {} }
+function subChats() { try { onValue(r('chats'), s => { const d = s.val() || {}; state.chats = Object.entries(d).map(([id, v]) => ({ id, ...v })); renderChatList(); if (state.activeChatId) renderMessages(); }); } catch (e) {} }
+function subReviews() { try { onValue(r('reviews'), s => { state.reviews = s.val() || {}; }); } catch (e) {} }
+function subBanned() { try { onValue(r('banned'), s => { const d = s.val() || {}; state.banned = Object.keys(d).filter(k => d[k]); render(); }); } catch (e) {} }
+function subMods() { try { onValue(r('mods'), s => { const d = s.val() || {}; state.mods = Object.keys(d).filter(k => d[k]); checkAdminUI(); render(); }); } catch (e) {} }
+function subHidden() { try { onValue(r('hidden'), s => { const d = s.val() || {}; state.hidden = Object.keys(d).filter(k => d[k]).map(Number); render(); }); } catch (e) {} }
+function subOnline() { try { onValue(r('online'), s => { state.online = s.val() || {}; updateOnlineUI(); }); } catch (e) {} }
 
 function fbSet(p, v) { return set(r(p), v); }
 function fbRemove(p) { return remove(r(p)); }
 
-// ===== PERSONAL =====
 function loadPersonal() {
   if (!state.user) return;
   const n = state.user.nick;
@@ -721,9 +755,6 @@ function savePersonal() {
   localStorage.setItem('ic_bookings_' + n, JSON.stringify(state.bookings));
 }
 
-// ===== AUTH =====
-function showAuth() { $('#authScreen').classList.add('active'); }
-function hideAuth() { $('#authScreen').classList.remove('active'); }
 function show2FA() { $('#twoFAScreen').classList.add('active'); }
 function hide2FA() { $('#twoFAScreen').classList.remove('active'); }
 function authError(id, msg) { const el = $(id); el.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${esc(msg)}`; el.classList.add('active'); setTimeout(() => el.classList.remove('active'), 4000); }
@@ -736,20 +767,20 @@ async function doRegister() {
   if (!/^[a-zA-Zа-яА-Я0-9_\- ]+$/.test(nick)) return authError('#registerError', 'Только буквы, цифры, _, -');
   if (!pass || pass.length < 6) return authError('#registerError', 'Пароль мин. 6 символов');
   if (pass !== pass2) return authError('#registerError', 'Пароли не совпадают');
-
-  const usersSnap = await get(r('users'));
-  const users = usersSnap.val() || {};
-  if (Object.keys(users).find(u => u.toLowerCase() === nick.toLowerCase())) return authError('#registerError', 'Ник занят');
-
-  const userData = { passHash: hashPassword(pass), bio: '', city: '', avatar: null, createdAt: Date.now(), twoFA: false };
-  await fbSet('users/' + nick, userData);
-  localStorage.setItem('ic_session_v6', nick);
-  state.user = { nick, ...userData };
-  loadPersonal();
-  hideAuth();
-  await startHeartbeat();
-  initApp();
-  toast('Добро пожаловать, ' + nick + '!', 'success', 'fa-user-plus');
+  try {
+    const usersSnap = await get(r('users'));
+    const users = usersSnap.val() || {};
+    if (Object.keys(users).find(u => u.toLowerCase() === nick.toLowerCase())) return authError('#registerError', 'Ник занят');
+    const userData = { passHash: hashPassword(pass), bio: '', city: '', avatar: null, createdAt: Date.now(), twoFA: false };
+    await fbSet('users/' + nick, userData);
+    localStorage.setItem('ic_session_v6', nick);
+    state.user = { nick, ...userData };
+    loadPersonal();
+    hideAuth();
+    await startHeartbeat();
+    initApp();
+    toast('Добро пожаловать, ' + nick + '!', 'success', 'fa-user-plus');
+  } catch (e) { authError('#registerError', 'Ошибка сети: ' + e.message); }
 }
 
 async function doLogin() {
@@ -757,26 +788,26 @@ async function doLogin() {
   const pass = $('#loginPass').value;
   if (!nick) return authError('#loginError', 'Введите ник');
   if (!pass) return authError('#loginError', 'Введите пароль');
-
-  const usersSnap = await get(r('users'));
-  const users = usersSnap.val() || {};
-  const existing = Object.keys(users).find(u => u.toLowerCase() === nick.toLowerCase());
-  if (!existing) return authError('#loginError', 'Пользователь не найден');
-  if (isBanned(existing)) return authError('#loginError', 'Аккаунт забанен');
-  if (users[existing].passHash !== hashPassword(pass)) return authError('#loginError', 'Неверный пароль');
-
-  if (users[existing].twoFA) {
-    state.pendingUser = existing;
-    state.pendingCode = String(Math.floor(100000 + Math.random() * 900000));
-    $('#twoFACode').textContent = state.pendingCode;
-    $('#twoFAError').classList.remove('active');
-    $$('#codeInputs input').forEach(i => i.value = '');
-    hideAuth(); show2FA();
-    setTimeout(() => $$('#codeInputs input')[0].focus(), 100);
-    toast('Код: ' + state.pendingCode, 'info', 'fa-shield-alt');
-    return;
-  }
-  await finishLogin(existing, users[existing]);
+  try {
+    const usersSnap = await get(r('users'));
+    const users = usersSnap.val() || {};
+    const existing = Object.keys(users).find(u => u.toLowerCase() === nick.toLowerCase());
+    if (!existing) return authError('#loginError', 'Пользователь не найден');
+    if (isBanned(existing)) return authError('#loginError', 'Аккаунт забанен');
+    if (users[existing].passHash !== hashPassword(pass)) return authError('#loginError', 'Неверный пароль');
+    if (users[existing].twoFA) {
+      state.pendingUser = existing;
+      state.pendingCode = String(Math.floor(100000 + Math.random() * 900000));
+      $('#twoFACode').textContent = state.pendingCode;
+      $('#twoFAError').classList.remove('active');
+      $$('#codeInputs input').forEach(i => i.value = '');
+      hideAuth(); show2FA();
+      setTimeout(() => $$('#codeInputs input')[0].focus(), 100);
+      toast('Код: ' + state.pendingCode, 'info', 'fa-shield-alt');
+      return;
+    }
+    await finishLogin(existing, users[existing]);
+  } catch (e) { authError('#loginError', 'Ошибка сети: ' + e.message); }
 }
 
 async function finishLogin(nick, u) {
@@ -827,14 +858,15 @@ async function doLogout() {
   toast('Вы вышли', 'info', 'fa-sign-out-alt');
 }
 
-// ===== ONLINE =====
 let hbT = null;
 async function startHeartbeat() {
   if (!state.user) return;
   const nick = state.user.nick;
   const myRef = r('online/' + nick);
-  await set(myRef, { time: Date.now(), nick });
-  onDisconnect(myRef).remove();
+  try {
+    await set(myRef, { time: Date.now(), nick });
+    onDisconnect(myRef).remove();
+  } catch (e) { console.error('heartbeat error', e); }
   if (hbT) clearInterval(hbT);
   hbT = setInterval(async () => {
     try { await set(myRef, { time: Date.now(), nick }); } catch (e) {}
@@ -851,7 +883,6 @@ function updateOnlineUI() {
   const el = $('#statOnline'); if (el) el.textContent = getOnlineCount();
 }
 
-// ===== HEADER =====
 function renderHeader() {
   if (!state.user) { $('#headerNick').textContent = '—'; $('#headerAvatar').textContent = '?'; return; }
   $('#headerNick').textContent = state.user.nick;
@@ -895,16 +926,13 @@ function getRating(n) {
   return { avg: Math.round(avg * 10) / 10, count: list.length };
 }
 
-// ===== RENDER GRID =====
 function render() {
   const grid = $('#grid'); if (!grid) return;
   grid.innerHTML = '';
   let list = state.servers.filter(s => s.type === state.currentTab && !isHidden(s.id));
   if (!state.user || !isAdmin(state.user.nick)) list = list.filter(s => !isBanned(s.owner));
-
   const q = ($('#globalSearch').value || '').trim().toLowerCase();
   if (q) list = list.filter(s => (s.title || '').toLowerCase().includes(q) || (s.cpu || '').toLowerCase().includes(q) || (s.gpu || '').toLowerCase().includes(q) || (s.owner || '').toLowerCase().includes(q) || (s.tags || []).some(t => t.toLowerCase().includes(q)));
-
   const f = state.filters;
   if (f.maxPrice && f.maxPrice < 500000) list = list.filter(s => s.price <= f.maxPrice);
   if (f.cpu && f.cpu !== 'any') list = list.filter(s => s.cpuBrand === f.cpu);
@@ -916,19 +944,16 @@ function render() {
   if (f.onlyNew) list = list.filter(s => Date.now() - (s.date || 0) < 86400000 * 7);
   if (f.onlyPhoto) list = list.filter(s => s.photos && s.photos.length > 0);
   if (state.filterTags.length) list = list.filter(s => state.filterTags.every(t => (s.tags || []).includes(t)));
-
   const sort = $('#sortSelect').value;
   if (sort === 'price-asc') list.sort((a, b) => a.price - b.price);
   else if (sort === 'price-desc') list.sort((a, b) => b.price - a.price);
   else if (sort === 'title') list.sort((a, b) => a.title.localeCompare(b.title));
   else if (sort === 'views') list.sort((a, b) => (b.views || 0) - (a.views || 0));
   else list.sort((a, b) => (b.date || 0) - (a.date || 0));
-
   if (!list.length) {
     grid.innerHTML = `<div class="empty-state"><i class="fas fa-inbox"></i><h3>Объявлений пока нет</h3><p>${state.user ? 'Добавьте первое!' : 'Войдите'}</p></div>`;
     renderStats(); renderFilterTags(); return;
   }
-
   list.forEach((s, i) => {
     const isMine = state.user && s.owner === state.user.nick;
     const isFav = state.favorites.includes(s.id);
@@ -938,7 +963,6 @@ function render() {
     const rating = getRating(s.owner);
     const ownerIsMod = isAdmin(s.owner);
     const ownerOnline = isOnline(s.owner);
-
     const card = document.createElement('div');
     card.className = 'card';
     card.style.animationDelay = Math.min(i * 0.04, 0.5) + 's';
@@ -975,7 +999,6 @@ function render() {
     card.addEventListener('click', () => openModal(s.id));
     grid.appendChild(card);
   });
-
   renderStats(); renderFilterTags();
 }
 
@@ -987,13 +1010,11 @@ function toggleFav(id) {
   savePersonal(); render(); renderHeader();
 }
 
-// ===== MODAL =====
 async function openModal(id) {
   const s = state.servers.find(x => x.id === id); if (!s) return;
   const newViews = (s.views || 0) + 1;
   try { await update(r('servers/' + id), { views: newViews }); } catch (e) {}
   if (state.user && !state.viewed.includes(id)) { state.viewed.unshift(id); if (state.viewed.length > 20) state.viewed.pop(); savePersonal(); }
-
   const isMine = state.user && s.owner === state.user.nick;
   const isFav = state.favorites.includes(s.id);
   const hasP = s.photos && s.photos.length > 0;
@@ -1002,11 +1023,9 @@ async function openModal(id) {
   const inCart = state.cart.some(c => c.id === s.id);
   const ownerOnline = isOnline(s.owner);
   const ownerLastSeen = state.online[s.owner]?.time;
-
   let statusHtml = '';
   if (ownerOnline) statusHtml = ' <span style="color:#22c55e;font-size:12px;">● онлайн</span>';
   else if (ownerLastSeen) { const m = Math.floor((Date.now() - ownerLastSeen) / 60000); statusHtml = ` <span style="color:var(--dark-3);font-size:11px;">был(а) ${m} мин назад</span>`; }
-
   $('#modalContent').innerHTML = `
     <div class="modal-header">
       <h2><i class="fas fa-${s.device === 'server' ? 'server' : 'desktop'}"></i> ${esc(s.title)}</h2>
@@ -1061,7 +1080,6 @@ async function deleteAd(id) {
   toast('Удалено', 'success', 'fa-trash');
 }
 
-// ===== CART =====
 function addToCart(id) {
   if (!state.user) return toast('Войдите', 'warning');
   const s = state.servers.find(x => x.id === id);
@@ -1105,7 +1123,6 @@ function checkout() {
   playSound(1400, 0.2);
 }
 
-// ===== BOOKING =====
 function openBooking(id) {
   if (!state.user) return toast('Войдите', 'warning');
   const s = state.servers.find(x => x.id === id); if (!s) return;
@@ -1186,7 +1203,6 @@ function confirmBooking() {
   playSound(1400, 0.2);
 }
 
-// ===== TRANSACTIONS =====
 function openTransactions() {
   if (!state.user) return;
   $('#modalContent').innerHTML = `
@@ -1201,7 +1217,6 @@ function openTransactions() {
   $('#modalBg').classList.add('active');
 }
 
-// ===== PROFILE =====
 function openProfile() {
   if (!state.user) return showAuth();
   const myAds = state.servers.filter(s => s.owner === state.user.nick);
@@ -1214,7 +1229,6 @@ function openProfile() {
   const online = isOnline(state.user.nick);
   const vSuper = isSuperAdmin(state.user.nick);
   const vMod = state.mods.includes(state.user.nick);
-
   $('#modalContent').innerHTML = `
     <div class="modal-header"><h2><i class="fas fa-user"></i> Профиль</h2><button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button></div>
     <div class="modal-body">
@@ -1310,7 +1324,7 @@ function uploadAvatar(e) {
   rdr.readAsDataURL(f);
 }
 function exportData() {
-  const d = { version: 8, user: state.user, servers: state.servers.filter(s => s.owner === state.user.nick), favorites: state.favorites, transactions: state.transactions, bookings: state.bookings, exportedAt: Date.now() };
+  const d = { version: 9, user: state.user, servers: state.servers.filter(s => s.owner === state.user.nick), favorites: state.favorites, transactions: state.transactions, bookings: state.bookings, exportedAt: Date.now() };
   const b = new Blob([JSON.stringify(d, null, 2)], { type: 'application/json' });
   const u = URL.createObjectURL(b);
   const a = document.createElement('a'); a.href = u; a.download = `ironcloud-${state.user.nick}.json`; a.click();
@@ -1339,14 +1353,12 @@ function importData(e) {
   rdr.readAsText(f); e.target.value = '';
 }
 
-// ===== ADD AD =====
 function openAddAd() {
   if (!state.user) return showAuth();
   const count = state.servers.filter(s => s.owner === state.user.nick).length;
   if (count >= MAX_ADS) return toast('Лимит 5', 'error');
   const rem = MAX_ADS - count;
   state.editingPhotos = []; state.editingTags = [];
-
   $('#modalContent').innerHTML = `
     <div class="modal-header"><h2><i class="fas fa-plus-circle"></i> Новое объявление</h2><button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button></div>
     <div class="modal-body">
@@ -1460,7 +1472,6 @@ async function saveAd() {
   if (!ram || ram < 1) return toast('RAM?', 'error');
   if (!gpu) return toast('GPU?', 'error');
   if (!storage) return toast('Накопитель?', 'error');
-
   const id = uid();
   const newAd = { id, title, device, type, price, cpu, cpuBrand, ram, gpu, storage, storageType, owner: state.user.nick, views: 0, date: Date.now(), photos: [...state.editingPhotos], tags: [...state.editingTags] };
   state.editingPhotos = []; state.editingTags = [];
@@ -1469,7 +1480,6 @@ async function saveAd() {
   toast('Опубликовано!', 'success', 'fa-rocket'); playSound(1200, 0.15);
 }
 
-// ===== FILTERS =====
 function openFilters() {
   const f = state.filters;
   if (f.maxPrice) { $('#priceFilter').value = f.maxPrice; $('#priceVal').textContent = f.maxPrice; }
@@ -1518,7 +1528,6 @@ function updateFilterCount() {
   else { el.style.display = 'none'; $('#filterToggleBtn').classList.remove('active'); }
 }
 
-// ===== CHAT =====
 function chatKey(a, b) { return [a, b].sort().join('__'); }
 
 function openChat() {
@@ -1546,10 +1555,7 @@ function renderChatList() {
   if (!my.length) {
     box.innerHTML = `<div class="empty-chats"><i class="fas fa-comments"></i><h4>${q ? 'Не найдено' : 'Пока нет чатов'}</h4></div>`;
   } else {
-    my.sort((a, b) => {
-      const la = a.lastTime || 0, lb = b.lastTime || 0;
-      return lb - la;
-    });
+    my.sort((a, b) => (b.lastTime || 0) - (a.lastTime || 0));
     box.innerHTML = my.map(c => {
       const other = c.u1 === state.user.nick ? c.u2 : c.u1;
       const preview = c.lastMessage || 'Начните переписку';
@@ -1575,18 +1581,20 @@ async function startChat(adId) {
   const key = chatKey(state.user.nick, ad.owner);
   const existing = state.chats.find(c => c.id === key);
   if (!existing) {
-    await fbSet('chats/' + key, { id: key, u1: state.user.nick, u2: ad.owner, adTitle: ad.title, lastTime: 0, lastMessage: '' });
+    try {
+      await fbSet('chats/' + key, { id: key, u1: state.user.nick, u2: ad.owner, adTitle: ad.title, lastTime: 0, lastMessage: '' });
+    } catch (e) {}
   }
   state.activeChatId = key;
   closeModal(); openChat();
-  setTimeout(() => openConversation(key), 200);
+  setTimeout(() => openConversation(key), 300);
 }
 async function openConversation(id) {
   const c = state.chats.find(x => x.id === id);
   if (!c || !state.user) return;
   state.activeChatId = id;
   if (c['unread_' + state.user.nick]) {
-    await update(r('chats/' + id), { ['unread_' + state.user.nick]: 0 });
+    try { await update(r('chats/' + id), { ['unread_' + state.user.nick]: 0 }); } catch (e) {}
   }
   $('#chatList').classList.add('hidden');
   $('#chatConversation').classList.add('active');
@@ -1634,17 +1642,18 @@ async function sendMessage() {
   const msgId = uid();
   const unreadKey = 'unread_' + other;
   const currentUnread = c[unreadKey] || 0;
-  await update(r('chats/' + c.id), {
-    ['messages/' + msgId]: { from: state.user.nick, text, time: Date.now() },
-    lastMessage: text,
-    lastTime: Date.now(),
-    [unreadKey]: currentUnread + 1,
-  });
   i.value = '';
+  try {
+    await update(r('chats/' + c.id), {
+      ['messages/' + msgId]: { from: state.user.nick, text, time: Date.now() },
+      lastMessage: text,
+      lastTime: Date.now(),
+      [unreadKey]: currentUnread + 1,
+    });
+  } catch (e) { toast('Не удалось отправить', 'error'); i.value = text; }
   playSound(700, 0.05);
 }
 
-// ===== PHOTO VIEWER =====
 function openPhotoViewer(adId, idx) {
   const s = state.servers.find(x => x.id === adId);
   if (!s || !s.photos) return;
@@ -1656,7 +1665,6 @@ function closePhotoViewer() { $('#photoViewer').classList.remove('active'); stat
 function prevPhoto() { if (state.viewerPhotos.length < 2) return; state.viewerIndex = (state.viewerIndex - 1 + state.viewerPhotos.length) % state.viewerPhotos.length; $('#photoViewerImg').src = state.viewerPhotos[state.viewerIndex]; }
 function nextPhoto() { if (state.viewerPhotos.length < 2) return; state.viewerIndex = (state.viewerIndex + 1) % state.viewerPhotos.length; $('#photoViewerImg').src = state.viewerPhotos[state.viewerIndex]; }
 
-// ===== ADMIN =====
 function openAdmin() { if (!state.user || !isAdmin(state.user.nick)) return; renderAdminTab('stats'); }
 
 function renderAdminTab(tab) {
@@ -1667,7 +1675,6 @@ function renderAdminTab(tab) {
   const totalViews = state.servers.reduce((s, x) => s + (x.views || 0), 0);
   const totalOnline = getOnlineCount();
   const viewerIsSuper = isSuperAdmin(state.user.nick);
-
   let content = '';
   if (tab === 'stats') {
     content = `
@@ -1696,7 +1703,6 @@ function renderAdminTab(tab) {
       }
       if (isB) actions += `<button class="unban-btn" onclick="adminUnban('${esc(u)}')">Разбан</button>`;
       else if (!isSuper) actions += `<button class="ban-btn" onclick="adminBan('${esc(u)}')">Бан</button>`;
-
       return `<div class="admin-user-item ${isB ? 'banned' : ''}">
         <div class="au-info">
           <b>${on ? '<i class="fas fa-circle" style="color:#22c55e;font-size:8px;"></i> ' : ''}${esc(u)} ${isSuper ? '👑' : (isMod ? '🛡' : '')} ${isB ? '🚫' : ''}</b>
@@ -1717,7 +1723,6 @@ function renderAdminTab(tab) {
       </div>`;
     }).join('');
   }
-
   $('#modalContent').innerHTML = `
     <div class="modal-header"><h2><i class="fas fa-shield-alt"></i> Админ ${viewerIsSuper ? '(SUPER)' : '(MOD)'}</h2><button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button></div>
     <div class="modal-body">
@@ -1751,7 +1756,6 @@ async function adminResetAll() {
   location.reload();
 }
 
-// ===== TABS =====
 function switchTab(t) {
   state.currentTab = t;
   $$('.tab').forEach(x => x.classList.toggle('active', x.dataset.tab === t));
@@ -1772,15 +1776,15 @@ function checkAdminUI() {
 }
 function hideAdminUI() { $('#adminBtn').style.display = 'none'; }
 
-// ===== INIT =====
 function initApp() {
+  hideLoading();
   renderHeader(); render(); updateFilterCount(); checkAdminUI();
 }
 
 function init() {
   applyTheme(getTheme());
-  subUsers(); subServers(); subChats(); subReviews(); subBanned(); subMods(); subHidden(); subOnline();
 
+  // Кнопка темы
   $('#themeBtn').addEventListener('click', () => {
     const order = ['violet', 'dark', 'light'];
     const names = { violet: 'Сиреневая', dark: 'Тёмная', light: 'Светлая' };
@@ -1790,21 +1794,7 @@ function init() {
     toast('Тема: ' + names[next], 'info', 'fa-palette');
   });
 
-  const session = localStorage.getItem('ic_session_v6');
-  (async () => {
-    if (session) {
-      const usersSnap = await get(r('users'));
-      const users = usersSnap.val() || {};
-      if (users[session] && !isBanned(session)) {
-        state.user = { nick: session, bio: users[session].bio || '', city: users[session].city || '', avatar: users[session].avatar || null, createdAt: users[session].createdAt, twoFA: users[session].twoFA || false };
-        loadPersonal();
-        hideAuth();
-        await startHeartbeat();
-        initApp();
-      } else showAuth();
-    } else showAuth();
-  })();
-
+  // Обработчики
   $$('.auth-tab').forEach(tab => tab.addEventListener('click', () => {
     $$('.auth-tab').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
@@ -1812,7 +1802,6 @@ function init() {
     const id = 'form' + tab.dataset.authtab.charAt(0).toUpperCase() + tab.dataset.authtab.slice(1);
     $(`#${id}`).classList.add('active');
   }));
-
   $$('.tab').forEach(tab => tab.addEventListener('click', () => switchTab(tab.dataset.tab)));
   setTimeout(moveTabIndicator, 100);
   window.addEventListener('resize', moveTabIndicator);
@@ -1844,10 +1833,41 @@ function init() {
     if (e.key === 'ArrowRight' && $('#photoViewer').classList.contains('active')) nextPhoto();
   });
 
-  console.log('%c✅ IronCloud v8 — Firebase Realtime', 'color:#22c55e;font-size:14px;font-weight:bold;');
+  // Сессия
+  const session = localStorage.getItem('ic_session_v6');
+  (async () => {
+    if (!session) {
+      hideLoading();
+      showAuth();
+      return;
+    }
+    try {
+      const usersSnap = await get(r('users'));
+      const users = usersSnap.val() || {};
+      if (users[session] && !isBanned(session)) {
+        state.user = { nick: session, bio: users[session].bio || '', city: users[session].city || '', avatar: users[session].avatar || null, createdAt: users[session].createdAt, twoFA: users[session].twoFA || false };
+        loadPersonal();
+        hideAuth();
+        await startHeartbeat();
+        initApp();
+      } else {
+        hideLoading();
+        showAuth();
+      }
+    } catch (e) {
+      console.error('Session error:', e);
+      hideLoading();
+      showAuth();
+    }
+  })();
+
+  // Подписки
+  subUsers(); subServers(); subChats(); subReviews(); subBanned(); subMods(); subHidden(); subOnline();
+
+  console.log('%c✅ IronCloud v9 — jsdelivr + fallback', 'color:#22c55e;font-size:14px;font-weight:bold;');
 }
 
-// ===== EXPOSE TO WINDOW =====
+// Экспорт в window для inline-обработчиков
 Object.assign(window, {
   doLogin, doRegister, doLogout, cancel2FA, verify2FA,
   openModal, closeModal, deleteAd, toggleFav,
@@ -1863,7 +1883,23 @@ Object.assign(window, {
   dismissPush, toggleFilterTag, changeTheme,
 });
 
-init();
+try {
+  init();
+} catch (e) {
+  console.error('Init failed:', e);
+  hideLoading();
+  showAuth();
+}
+
+// Fallback: если через 5 секунд всё ещё загрузка — показываем форму
+setTimeout(() => {
+  const ls = document.getElementById('loadingScreen');
+  const as = document.getElementById('authScreen');
+  if (ls && !ls.classList.contains('hidden')) {
+    ls.classList.add('hidden');
+    if (as) as.classList.add('active');
+  }
+}, 5000);
 </script>
 </body>
 </html>
