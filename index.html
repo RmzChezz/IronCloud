@@ -6,6 +6,8 @@
 <meta name="theme-color" content="#7c3aed">
 <title>IronCloud</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/firebase@8.10.1/firebase-app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@8.10.1/firebase-database.js"></script>
 <script>
   (function() {
     var t = localStorage.getItem('ic_theme_v6') || 'violet';
@@ -620,10 +622,10 @@
   <button class="photo-viewer-next" onclick="event.stopPropagation();nextPhoto()"><i class="fas fa-chevron-right"></i></button>
 </div>
 
-<script type="module">
-import { initializeApp } from 'https://esm.sh/firebase@10.7.1/app';
-import { getDatabase, ref, set, get, update, remove, onValue, push, onDisconnect }
-  from 'https://esm.sh/firebase@10.7.1/database';
+<script>
+/* ============================================================
+   IRONCLOUD v9.2 — Firebase 8 (классический API)
+   ============================================================ */
 
 const FB_URL = 'https://ironcloud-9e32d-default-rtdb.europe-west1.firebasedatabase.app/';
 const SUPER_ADMIN = 'admin';
@@ -637,22 +639,19 @@ const $ = (s, p = document) => p.querySelector(s);
 const $$ = (s, p = document) => [...p.querySelectorAll(s)];
 const uid = () => Date.now() + Math.floor(Math.random() * 1000);
 
-function hideLoading() {
-  const ls = document.getElementById('loadingScreen');
-  if (ls) ls.classList.add('hidden');
-}
+function hideLoading() { const ls = document.getElementById('loadingScreen'); if (ls) ls.classList.add('hidden'); }
 function showAuth() { hideLoading(); $('#authScreen').classList.add('active'); }
 function hideAuth() { $('#authScreen').classList.remove('active'); }
 
-let app = null, db = null, dbReady = false;
+let db = null, dbReady = false;
 try {
-  app = initializeApp({ databaseURL: FB_URL }, 'ironcloud-v9');
-  db = getDatabase(app);
+  firebase.initializeApp({ databaseURL: FB_URL });
+  db = firebase.database();
   dbReady = true;
+  console.log('%c🔥 Firebase 8 инициализирован', 'color:#22c55e;font-weight:bold;');
 } catch (e) {
   console.error('Firebase init error:', e);
 }
-const r = (p) => ref(db, p);
 
 let state = {
   user: null,
@@ -711,17 +710,21 @@ function applyTheme(name) {
 function changeTheme(n) { applyTheme(n); }
 function getTheme() { return localStorage.getItem('ic_theme_v6') || 'violet'; }
 
-function subUsers() { try { onValue(r('users'), s => { window.__users = s.val() || {}; }); } catch (e) { console.error(e); } }
-function subServers() { try { onValue(r('servers'), s => { const d = s.val() || {}; state.servers = Object.entries(d).map(([id, v]) => ({ id: Number(id), ...v })); render(); }); } catch (e) { console.error(e); } }
-function subChats() { try { onValue(r('chats'), s => { const d = s.val() || {}; state.chats = Object.entries(d).map(([id, v]) => ({ id, ...v })); renderChatList(); if (state.activeChatId) renderMessages(); }); } catch (e) { console.error(e); } }
-function subReviews() { try { onValue(r('reviews'), s => { state.reviews = s.val() || {}; }); } catch (e) {} }
-function subBanned() { try { onValue(r('banned'), s => { const d = s.val() || {}; state.banned = Object.keys(d).filter(k => d[k]); render(); }); } catch (e) {} }
-function subMods() { try { onValue(r('mods'), s => { const d = s.val() || {}; state.mods = Object.keys(d).filter(k => d[k]); checkAdminUI(); render(); }); } catch (e) {} }
-function subHidden() { try { onValue(r('hidden'), s => { const d = s.val() || {}; state.hidden = Object.keys(d).filter(k => d[k]).map(Number); render(); }); } catch (e) {} }
-function subOnline() { try { onValue(r('online'), s => { state.online = s.val() || {}; updateOnlineUI(); }); } catch (e) {} }
+function ref(p) { return db ? db.ref(p) : null; }
 
-function fbSet(p, v) { return set(r(p), v); }
-function fbRemove(p) { return remove(r(p)); }
+function subUsers() { ref('users').on('value', s => { window.__users = s.val() || {}; }, e => console.error('users err', e)); }
+function subServers() { ref('servers').on('value', s => { const d = s.val() || {}; state.servers = Object.entries(d).map(([id, v]) => ({ id: Number(id), ...v })); render(); }, e => console.error('servers err', e)); }
+function subChats() { ref('chats').on('value', s => { const d = s.val() || {}; state.chats = Object.entries(d).map(([id, v]) => ({ id, ...v })); renderChatList(); if (state.activeChatId) renderMessages(); }, e => console.error('chats err', e)); }
+function subReviews() { ref('reviews').on('value', s => { state.reviews = s.val() || {}; }, () => {}); }
+function subBanned() { ref('banned').on('value', s => { const d = s.val() || {}; state.banned = Object.keys(d).filter(k => d[k]); render(); }, () => {}); }
+function subMods() { ref('mods').on('value', s => { const d = s.val() || {}; state.mods = Object.keys(d).filter(k => d[k]); checkAdminUI(); render(); }, () => {}); }
+function subHidden() { ref('hidden').on('value', s => { const d = s.val() || {}; state.hidden = Object.keys(d).filter(k => d[k]).map(Number); render(); }, () => {}); }
+function subOnline() { ref('online').on('value', s => { state.online = s.val() || {}; updateOnlineUI(); }, () => {}); }
+
+function fbSet(p, v) { return ref(p).set(v); }
+function fbRemove(p) { return ref(p).remove(); }
+function fbGet(p) { return ref(p).once('value').then(s => s.val()); }
+function fbUpdate(p, v) { return ref(p).update(v); }
 
 function loadPersonal() {
   if (!state.user) return;
@@ -756,8 +759,7 @@ async function doRegister() {
   if (!pass || pass.length < 6) return authError('#registerError', 'Пароль мин. 6 символов');
   if (pass !== pass2) return authError('#registerError', 'Пароли не совпадают');
   try {
-    const usersSnap = await get(r('users'));
-    const users = usersSnap.val() || {};
+    const users = await fbGet('users') || {};
     if (Object.keys(users).find(u => u.toLowerCase() === nick.toLowerCase())) return authError('#registerError', 'Ник занят');
     const userData = { passHash: hashPassword(pass), bio: '', city: '', avatar: null, createdAt: Date.now(), twoFA: false };
     await fbSet('users/' + nick, userData);
@@ -778,8 +780,7 @@ async function doLogin() {
   if (!nick) return authError('#loginError', 'Введите ник');
   if (!pass) return authError('#loginError', 'Введите пароль');
   try {
-    const usersSnap = await get(r('users'));
-    const users = usersSnap.val() || {};
+    const users = await fbGet('users') || {};
     const existing = Object.keys(users).find(u => u.toLowerCase() === nick.toLowerCase());
     if (!existing) return authError('#loginError', 'Пользователь не найден');
     if (isBanned(existing)) return authError('#loginError', 'Аккаунт забанен');
@@ -816,8 +817,8 @@ async function verify2FA() {
   if (code.length !== 6) return authError('#twoFAError', 'Введите 6 цифр');
   if (code !== state.pendingCode) return authError('#twoFAError', 'Неверный код');
   const n = state.pendingUser;
-  const usersSnap = await get(r('users'));
-  const u = (usersSnap.val() || {})[n];
+  const users = await fbGet('users') || {};
+  const u = users[n];
   state.pendingUser = null; state.pendingCode = null;
   await finishLogin(n, u);
 }
@@ -851,14 +852,14 @@ let hbT = null;
 async function startHeartbeat() {
   if (!state.user || !dbReady) return;
   const nick = state.user.nick;
-  const myRef = r('online/' + nick);
+  const myRef = ref('online/' + nick);
   try {
-    await set(myRef, { time: Date.now(), nick });
-    onDisconnect(myRef).remove();
+    await myRef.set({ time: Date.now(), nick });
+    myRef.onDisconnect().remove();
   } catch (e) { console.error('heartbeat error', e); }
   if (hbT) clearInterval(hbT);
   hbT = setInterval(async () => {
-    try { await set(myRef, { time: Date.now(), nick }); } catch (e) {}
+    try { await myRef.set({ time: Date.now(), nick }); } catch (e) {}
   }, 20000);
 }
 async function stopHeartbeat() {
@@ -962,7 +963,7 @@ function render() {
         ${ownerIsMod ? '<span class="badge-item badge-mod">🛡 MOD</span>' : ''}
         ${isMine ? '<span class="badge-item badge-mine">МОЁ</span>' : ''}
       </div>
-      <button class="fav-btn ${isFav ? 'active' : ''}" onclick="event.stopPropagation();window.toggleFav(${s.id})"><i class="${isFav ? 'fas' : 'far'} fa-heart"></i></button>
+      <button class="fav-btn ${isFav ? 'active' : ''}" onclick="event.stopPropagation();toggleFav(${s.id})"><i class="${isFav ? 'fas' : 'far'} fa-heart"></i></button>
       <div class="card-photo">
         ${hasP ? `<img src="${s.photos[0]}" alt="">` : `<i class="fas fa-${s.device === 'server' ? 'server' : 'desktop'} photo-placeholder"></i>`}
         ${hasP && s.photos.length > 1 ? `<div class="card-photo-count"><i class="fas fa-camera"></i> ${s.photos.length}</div>` : ''}
@@ -1002,7 +1003,7 @@ function toggleFav(id) {
 async function openModal(id) {
   const s = state.servers.find(x => x.id === id); if (!s) return;
   const newViews = (s.views || 0) + 1;
-  if (dbReady) { try { await update(r('servers/' + id), { views: newViews }); } catch (e) {} }
+  if (dbReady) { try { await fbUpdate('servers/' + id, { views: newViews }); } catch (e) {} }
   if (state.user && !state.viewed.includes(id)) { state.viewed.unshift(id); if (state.viewed.length > 20) state.viewed.pop(); savePersonal(); }
   const isMine = state.user && s.owner === state.user.nick;
   const isFav = state.favorites.includes(s.id);
@@ -1279,7 +1280,7 @@ function openProfile() {
 
 async function toggle2FA(en) {
   if (!state.user || !dbReady) return;
-  await update(r('users/' + state.user.nick), { twoFA: en });
+  await fbUpdate('users/' + state.user.nick, { twoFA: en });
   state.user.twoFA = en;
   toast(en ? '2FA вкл' : '2FA выкл', 'info', 'fa-shield-alt');
 }
@@ -1287,7 +1288,7 @@ async function saveProfile() {
   if (!dbReady) return;
   const city = $('#newCity').value.trim();
   const bio = $('#newBio').value.trim();
-  await update(r('users/' + state.user.nick), { city, bio });
+  await fbUpdate('users/' + state.user.nick, { city, bio });
   state.user.city = city; state.user.bio = bio;
   closeModal();
   toast('Сохранено', 'success', 'fa-check');
@@ -1305,7 +1306,7 @@ function uploadAvatar(e) {
       ctx.drawImage(img, (img.width - m) / 2, (img.height - m) / 2, m, m, 0, 0, 200, 200);
       const url = c.toDataURL('image/jpeg', 0.85);
       state.user.avatar = url;
-      if (dbReady) await update(r('users/' + state.user.nick), { avatar: url });
+      if (dbReady) await fbUpdate('users/' + state.user.nick, { avatar: url });
       renderHeader(); openProfile();
       toast('Аватар обновлён', 'success', 'fa-camera');
     };
@@ -1583,7 +1584,7 @@ async function openConversation(id) {
   if (!c || !state.user) return;
   state.activeChatId = id;
   if (c['unread_' + state.user.nick] && dbReady) {
-    try { await update(r('chats/' + id), { ['unread_' + state.user.nick]: 0 }); } catch (e) {}
+    try { await fbUpdate('chats/' + id, { ['unread_' + state.user.nick]: 0 }); } catch (e) {}
   }
   $('#chatList').classList.add('hidden');
   $('#chatConversation').classList.add('active');
@@ -1633,12 +1634,12 @@ async function sendMessage() {
   const currentUnread = c[unreadKey] || 0;
   i.value = '';
   try {
-    await update(r('chats/' + c.id), {
-      ['messages/' + msgId]: { from: state.user.nick, text, time: Date.now() },
-      lastMessage: text,
-      lastTime: Date.now(),
-      [unreadKey]: currentUnread + 1,
-    });
+    const upd = {};
+    upd['messages/' + msgId] = { from: state.user.nick, text, time: Date.now() };
+    upd['lastMessage'] = text;
+    upd['lastTime'] = Date.now();
+    upd[unreadKey] = currentUnread + 1;
+    await fbUpdate('chats/' + c.id, upd);
   } catch (e) { toast('Не удалось отправить', 'error'); i.value = text; }
   playSound(700, 0.05);
 }
@@ -1821,12 +1822,10 @@ function init() {
     if (e.key === 'ArrowRight' && $('#photoViewer').classList.contains('active')) nextPhoto();
   });
 
-  // Подписки
   if (dbReady) {
     subUsers(); subServers(); subChats(); subReviews(); subBanned(); subMods(); subHidden(); subOnline();
   }
 
-  // Сессия
   const session = localStorage.getItem('ic_session_v6');
   (async () => {
     if (!session || !dbReady) {
@@ -1835,8 +1834,7 @@ function init() {
       return;
     }
     try {
-      const usersSnap = await get(r('users'));
-      const users = usersSnap.val() || {};
+      const users = await fbGet('users') || {};
       if (users[session] && !isBanned(session)) {
         state.user = { nick: session, bio: users[session].bio || '', city: users[session].city || '', avatar: users[session].avatar || null, createdAt: users[session].createdAt, twoFA: users[session].twoFA || false };
         loadPersonal();
@@ -1854,7 +1852,7 @@ function init() {
     }
   })();
 
-  console.log('%c✅ IronCloud v9.1 — esm.sh', 'color:#22c55e;font-size:14px;font-weight:bold;');
+  console.log('%c✅ IronCloud v9.2 — Firebase 8', 'color:#22c55e;font-size:14px;font-weight:bold;');
 }
 
 Object.assign(window, {
