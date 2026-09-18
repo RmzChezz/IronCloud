@@ -43,6 +43,13 @@
   * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
   html, body { height: 100%; }
   body { background: linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 100%); background-attachment: fixed; color: var(--text); min-height: 100vh; overflow-x: hidden; padding-bottom: 100px; transition: background 0.4s, color 0.4s; }
+  .loading-screen { position: fixed; inset: 0; background: linear-gradient(180deg, #b9a9e3 0%, #a18fd6 100%); z-index: 9500; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; transition: opacity 0.3s; }
+  .loading-screen.hidden { opacity: 0; pointer-events: none; }
+  .loading-screen .loading-logo { font-size: 72px; font-weight: 900; color: #2a1a55; font-family: 'Comic Sans MS', cursive; letter-spacing: -3px; animation: pulse-logo 1.5s ease-in-out infinite; }
+  @keyframes pulse-logo { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+  .loading-screen .loading-spinner { width: 50px; height: 50px; border: 5px solid #2a1a55; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-screen .loading-text { color: #4a3a80; font-family: 'Comic Sans MS', cursive; font-size: 16px; font-weight: bold; }
   .auth-screen { position: fixed; inset: 0; background: linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 100%); z-index: 9000; display: none; align-items: center; justify-content: center; padding: 20px; overflow-y: auto; }
   .auth-screen.active { display: flex; }
   .auth-card { background: var(--bg-1); border: 3px solid var(--border); border-radius: 24px; padding: 36px; max-width: 460px; width: 100%; box-shadow: 0 30px 80px rgba(42, 26, 85, 0.5); animation: modalIn 0.5s cubic-bezier(0.16, 1, 0.3, 1); font-family: var(--comic); }
@@ -391,13 +398,6 @@
   .photo-viewer-prev { left: 30px; }
   .photo-viewer-next { right: 30px; }
   .photo-viewer-prev:hover, .photo-viewer-next:hover { background: var(--bg-1); transform: translateY(-50%) scale(1.1); }
-  .loading-screen { position: fixed; inset: 0; background: linear-gradient(180deg, #b9a9e3 0%, #a18fd6 100%); z-index: 9500; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; transition: opacity 0.3s; }
-  .loading-screen.hidden { opacity: 0; pointer-events: none; }
-  .loading-screen .loading-logo { font-size: 72px; font-weight: 900; color: #2a1a55; font-family: 'Comic Sans MS', cursive; letter-spacing: -3px; animation: pulse-logo 1.5s ease-in-out infinite; }
-  @keyframes pulse-logo { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
-  .loading-screen .loading-spinner { width: 50px; height: 50px; border: 5px solid #2a1a55; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .loading-screen .loading-text { color: #4a3a80; font-family: 'Comic Sans MS', cursive; font-size: 16px; font-weight: bold; }
   ::-webkit-scrollbar { width: 10px; height: 10px; }
   ::-webkit-scrollbar-track { background: var(--bg-3); }
   ::-webkit-scrollbar-thumb { background: var(--dark); border-radius: 5px; border: 2px solid var(--bg-3); }
@@ -434,14 +434,12 @@
 </head>
 <body>
 
-<!-- LOADING SCREEN -->
 <div class="loading-screen" id="loadingScreen">
   <div class="loading-logo">IC</div>
   <div class="loading-spinner"></div>
   <div class="loading-text">Подключение...</div>
 </div>
 
-<!-- AUTH -->
 <div class="auth-screen" id="authScreen">
   <div class="auth-card">
     <div class="auth-logo">IC</div>
@@ -468,7 +466,6 @@
   </div>
 </div>
 
-<!-- 2FA -->
 <div class="auth-screen" id="twoFAScreen">
   <div class="auth-card">
     <div class="auth-logo" style="font-size:38px;"><i class="fas fa-shield-alt" style="color:var(--accent);"></i></div>
@@ -491,7 +488,6 @@
   </div>
 </div>
 
-<!-- HEADER -->
 <header>
   <div class="logo" onclick="scrollTo({top:0,behavior:'smooth'})">IC</div>
   <div class="header-search"><i class="fas fa-search"></i><input type="text" id="globalSearch" placeholder="Поиск..."></div>
@@ -510,7 +506,6 @@
   </div>
 </header>
 
-<!-- CONTAINER -->
 <div class="container">
   <div class="toolbar">
     <div class="toolbar-left">
@@ -536,7 +531,6 @@
   <main class="grid" id="grid"></main>
 </div>
 
-<!-- FILTERS -->
 <div class="filters-overlay" id="filtersOverlay"></div>
 <aside class="filters-panel" id="filtersPanel">
   <div class="filters-header"><h3><i class="fas fa-filter"></i> Фильтры</h3><button class="modal-close" onclick="closeFilters()"><i class="fas fa-times"></i></button></div>
@@ -583,7 +577,6 @@
   </div>
 </aside>
 
-<!-- BOTTOM -->
 <div style="position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-around;align-items:center;padding:12px 20px;background:var(--bg-2);border-top:2px solid var(--border-light);z-index:100;">
   <button class="icon-btn" onclick="openFilters()"><i class="fas fa-filter"></i></button>
   <button class="icon-btn" onclick="openAddAd()" style="background:var(--dark);color:var(--bg-1);border-color:var(--dark);"><i class="fas fa-plus"></i></button>
@@ -592,10 +585,8 @@
   <button class="icon-btn" onclick="openChat()"><i class="fas fa-comments"></i></button>
 </div>
 
-<!-- MODAL -->
 <div class="modal-bg" id="modalBg"><div class="modal" id="modalContent"></div></div>
 
-<!-- CHAT -->
 <div class="chat-overlay" id="chatOverlay" onclick="closeChat()"></div>
 <div class="chat-panel" id="chatPanel">
   <div class="chat-header"><h3><i class="fas fa-comments"></i> <span id="chatPanelTitle">Мои чаты</span></h3><button class="modal-close" onclick="closeChat()"><i class="fas fa-times"></i></button></div>
@@ -617,7 +608,6 @@
   </div>
 </div>
 
-<!-- TOAST + PUSH + VIEWER -->
 <div class="toast-container" id="toastContainer"></div>
 <div class="push-notification" id="pushNotification" onclick="dismissPush()">
   <div class="push-icon" id="pushIcon"><i class="fas fa-bell"></i></div>
@@ -631,9 +621,9 @@
 </div>
 
 <script type="module">
-import { initializeApp } from 'https://cdn.jsdelivr.net/npm/firebase@10.7.1/firebase-app.js';
+import { initializeApp } from 'https://esm.sh/firebase@10.7.1/app';
 import { getDatabase, ref, set, get, update, remove, onValue, push, onDisconnect }
-  from 'https://cdn.jsdelivr.net/npm/firebase@10.7.1/firebase-database.js';
+  from 'https://esm.sh/firebase@10.7.1/database';
 
 const FB_URL = 'https://ironcloud-9e32d-default-rtdb.europe-west1.firebasedatabase.app/';
 const SUPER_ADMIN = 'admin';
@@ -651,19 +641,16 @@ function hideLoading() {
   const ls = document.getElementById('loadingScreen');
   if (ls) ls.classList.add('hidden');
 }
-function showAuth() {
-  hideLoading();
-  $('#authScreen').classList.add('active');
-}
+function showAuth() { hideLoading(); $('#authScreen').classList.add('active'); }
 function hideAuth() { $('#authScreen').classList.remove('active'); }
 
-let app, db;
+let app = null, db = null, dbReady = false;
 try {
   app = initializeApp({ databaseURL: FB_URL }, 'ironcloud-v9');
   db = getDatabase(app);
+  dbReady = true;
 } catch (e) {
   console.error('Firebase init error:', e);
-  showAuth();
 }
 const r = (p) => ref(db, p);
 
@@ -724,9 +711,9 @@ function applyTheme(name) {
 function changeTheme(n) { applyTheme(n); }
 function getTheme() { return localStorage.getItem('ic_theme_v6') || 'violet'; }
 
-function subUsers() { try { onValue(r('users'), s => { window.__users = s.val() || {}; }); } catch (e) {} }
-function subServers() { try { onValue(r('servers'), s => { const d = s.val() || {}; state.servers = Object.entries(d).map(([id, v]) => ({ id: Number(id), ...v })); render(); }); } catch (e) {} }
-function subChats() { try { onValue(r('chats'), s => { const d = s.val() || {}; state.chats = Object.entries(d).map(([id, v]) => ({ id, ...v })); renderChatList(); if (state.activeChatId) renderMessages(); }); } catch (e) {} }
+function subUsers() { try { onValue(r('users'), s => { window.__users = s.val() || {}; }); } catch (e) { console.error(e); } }
+function subServers() { try { onValue(r('servers'), s => { const d = s.val() || {}; state.servers = Object.entries(d).map(([id, v]) => ({ id: Number(id), ...v })); render(); }); } catch (e) { console.error(e); } }
+function subChats() { try { onValue(r('chats'), s => { const d = s.val() || {}; state.chats = Object.entries(d).map(([id, v]) => ({ id, ...v })); renderChatList(); if (state.activeChatId) renderMessages(); }); } catch (e) { console.error(e); } }
 function subReviews() { try { onValue(r('reviews'), s => { state.reviews = s.val() || {}; }); } catch (e) {} }
 function subBanned() { try { onValue(r('banned'), s => { const d = s.val() || {}; state.banned = Object.keys(d).filter(k => d[k]); render(); }); } catch (e) {} }
 function subMods() { try { onValue(r('mods'), s => { const d = s.val() || {}; state.mods = Object.keys(d).filter(k => d[k]); checkAdminUI(); render(); }); } catch (e) {} }
@@ -760,6 +747,7 @@ function hide2FA() { $('#twoFAScreen').classList.remove('active'); }
 function authError(id, msg) { const el = $(id); el.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${esc(msg)}`; el.classList.add('active'); setTimeout(() => el.classList.remove('active'), 4000); }
 
 async function doRegister() {
+  if (!dbReady) return authError('#registerError', 'Нет соединения с сервером');
   const nick = $('#regNick').value.trim();
   const pass = $('#regPass').value, pass2 = $('#regPass2').value;
   if (!nick) return authError('#registerError', 'Введите ник');
@@ -780,10 +768,11 @@ async function doRegister() {
     await startHeartbeat();
     initApp();
     toast('Добро пожаловать, ' + nick + '!', 'success', 'fa-user-plus');
-  } catch (e) { authError('#registerError', 'Ошибка сети: ' + e.message); }
+  } catch (e) { authError('#registerError', 'Ошибка: ' + (e.message || e)); }
 }
 
 async function doLogin() {
+  if (!dbReady) return authError('#loginError', 'Нет соединения с сервером');
   const nick = $('#loginNick').value.trim();
   const pass = $('#loginPass').value;
   if (!nick) return authError('#loginError', 'Введите ник');
@@ -807,7 +796,7 @@ async function doLogin() {
       return;
     }
     await finishLogin(existing, users[existing]);
-  } catch (e) { authError('#loginError', 'Ошибка сети: ' + e.message); }
+  } catch (e) { authError('#loginError', 'Ошибка: ' + (e.message || e)); }
 }
 
 async function finishLogin(nick, u) {
@@ -860,7 +849,7 @@ async function doLogout() {
 
 let hbT = null;
 async function startHeartbeat() {
-  if (!state.user) return;
+  if (!state.user || !dbReady) return;
   const nick = state.user.nick;
   const myRef = r('online/' + nick);
   try {
@@ -874,10 +863,10 @@ async function startHeartbeat() {
 }
 async function stopHeartbeat() {
   if (hbT) clearInterval(hbT); hbT = null;
-  if (state.user) { try { await fbRemove('online/' + state.user.nick); } catch (e) {} }
+  if (state.user && dbReady) { try { await fbRemove('online/' + state.user.nick); } catch (e) {} }
 }
-window.addEventListener('beforeunload', () => { if (state.user) fbRemove('online/' + state.user.nick); });
-window.addEventListener('pagehide', () => { if (state.user) fbRemove('online/' + state.user.nick); });
+window.addEventListener('beforeunload', () => { if (state.user && dbReady) fbRemove('online/' + state.user.nick); });
+window.addEventListener('pagehide', () => { if (state.user && dbReady) fbRemove('online/' + state.user.nick); });
 
 function updateOnlineUI() {
   const el = $('#statOnline'); if (el) el.textContent = getOnlineCount();
@@ -973,7 +962,7 @@ function render() {
         ${ownerIsMod ? '<span class="badge-item badge-mod">🛡 MOD</span>' : ''}
         ${isMine ? '<span class="badge-item badge-mine">МОЁ</span>' : ''}
       </div>
-      <button class="fav-btn ${isFav ? 'active' : ''}" onclick="event.stopPropagation();toggleFav(${s.id})"><i class="${isFav ? 'fas' : 'far'} fa-heart"></i></button>
+      <button class="fav-btn ${isFav ? 'active' : ''}" onclick="event.stopPropagation();window.toggleFav(${s.id})"><i class="${isFav ? 'fas' : 'far'} fa-heart"></i></button>
       <div class="card-photo">
         ${hasP ? `<img src="${s.photos[0]}" alt="">` : `<i class="fas fa-${s.device === 'server' ? 'server' : 'desktop'} photo-placeholder"></i>`}
         ${hasP && s.photos.length > 1 ? `<div class="card-photo-count"><i class="fas fa-camera"></i> ${s.photos.length}</div>` : ''}
@@ -1013,7 +1002,7 @@ function toggleFav(id) {
 async function openModal(id) {
   const s = state.servers.find(x => x.id === id); if (!s) return;
   const newViews = (s.views || 0) + 1;
-  try { await update(r('servers/' + id), { views: newViews }); } catch (e) {}
+  if (dbReady) { try { await update(r('servers/' + id), { views: newViews }); } catch (e) {} }
   if (state.user && !state.viewed.includes(id)) { state.viewed.unshift(id); if (state.viewed.length > 20) state.viewed.pop(); savePersonal(); }
   const isMine = state.user && s.owner === state.user.nick;
   const isFav = state.favorites.includes(s.id);
@@ -1075,7 +1064,7 @@ async function deleteAd(id) {
   const adm = isAdmin(state.user.nick);
   if (!s || (s.owner !== state.user.nick && !adm)) return toast('Это не ваше', 'error');
   if (!confirm('Удалить?')) return;
-  await fbRemove('servers/' + id);
+  if (dbReady) await fbRemove('servers/' + id);
   closeModal();
   toast('Удалено', 'success', 'fa-trash');
 }
@@ -1289,12 +1278,13 @@ function openProfile() {
 }
 
 async function toggle2FA(en) {
-  if (!state.user) return;
+  if (!state.user || !dbReady) return;
   await update(r('users/' + state.user.nick), { twoFA: en });
   state.user.twoFA = en;
   toast(en ? '2FA вкл' : '2FA выкл', 'info', 'fa-shield-alt');
 }
 async function saveProfile() {
+  if (!dbReady) return;
   const city = $('#newCity').value.trim();
   const bio = $('#newBio').value.trim();
   await update(r('users/' + state.user.nick), { city, bio });
@@ -1315,7 +1305,7 @@ function uploadAvatar(e) {
       ctx.drawImage(img, (img.width - m) / 2, (img.height - m) / 2, m, m, 0, 0, 200, 200);
       const url = c.toDataURL('image/jpeg', 0.85);
       state.user.avatar = url;
-      await update(r('users/' + state.user.nick), { avatar: url });
+      if (dbReady) await update(r('users/' + state.user.nick), { avatar: url });
       renderHeader(); openProfile();
       toast('Аватар обновлён', 'success', 'fa-camera');
     };
@@ -1344,7 +1334,7 @@ function importData(e) {
       for (const s of d.servers) {
         if (myAds.length + imported >= MAX_ADS) break;
         const id = uid() + imported;
-        await fbSet('servers/' + id, { ...s, id, owner: state.user.nick, views: 0, date: Date.now() });
+        if (dbReady) await fbSet('servers/' + id, { ...s, id, owner: state.user.nick, views: 0, date: Date.now() });
         imported++;
       }
       closeModal(); toast(`Импорт ${imported}`, 'success', 'fa-upload');
@@ -1454,6 +1444,7 @@ function removeEditingPhoto(i) { state.editingPhotos.splice(i, 1); renderPhotoPr
 
 async function saveAd() {
   if (!state.user) return showAuth();
+  if (!dbReady) return toast('Нет соединения', 'error');
   const count = state.servers.filter(s => s.owner === state.user.nick).length;
   if (count >= MAX_ADS) return toast('Лимит 5', 'error');
   const title = $('#adTitle').value.trim();
@@ -1580,10 +1571,8 @@ async function startChat(adId) {
   if (!ad || ad.owner === state.user.nick) return;
   const key = chatKey(state.user.nick, ad.owner);
   const existing = state.chats.find(c => c.id === key);
-  if (!existing) {
-    try {
-      await fbSet('chats/' + key, { id: key, u1: state.user.nick, u2: ad.owner, adTitle: ad.title, lastTime: 0, lastMessage: '' });
-    } catch (e) {}
+  if (!existing && dbReady) {
+    try { await fbSet('chats/' + key, { id: key, u1: state.user.nick, u2: ad.owner, adTitle: ad.title, lastTime: 0, lastMessage: '' }); } catch (e) {}
   }
   state.activeChatId = key;
   closeModal(); openChat();
@@ -1593,7 +1582,7 @@ async function openConversation(id) {
   const c = state.chats.find(x => x.id === id);
   if (!c || !state.user) return;
   state.activeChatId = id;
-  if (c['unread_' + state.user.nick]) {
+  if (c['unread_' + state.user.nick] && dbReady) {
     try { await update(r('chats/' + id), { ['unread_' + state.user.nick]: 0 }); } catch (e) {}
   }
   $('#chatList').classList.add('hidden');
@@ -1635,7 +1624,7 @@ function renderMessages() {
 async function sendMessage() {
   if (!state.user) return showAuth();
   const i = $('#chatInput'); const text = i.value.trim();
-  if (!text || !state.activeChatId) return;
+  if (!text || !state.activeChatId || !dbReady) return;
   const c = state.chats.find(x => x.id === state.activeChatId);
   if (!c) return;
   const other = c.u1 === state.user.nick ? c.u2 : c.u1;
@@ -1738,11 +1727,12 @@ function renderAdminTab(tab) {
   $('#modalBg').classList.add('active');
 }
 
-async function adminBan(nick) { if (!confirm(`Забанить ${nick}?`)) return; await fbSet('banned/' + nick, true); toast(`Забанен: ${nick}`, 'warning'); renderAdminTab('users'); }
-async function adminUnban(nick) { await fbRemove('banned/' + nick); toast(`Разбанен: ${nick}`, 'success'); renderAdminTab('users'); }
-async function adminPromote(nick) { if (!isSuperAdmin(state.user.nick)) return; await fbSet('mods/' + nick, true); toast(`🛡 ${nick} — модератор`, 'success'); renderAdminTab('users'); }
-async function adminDemote(nick) { if (!isSuperAdmin(state.user.nick)) return; await fbRemove('mods/' + nick); toast(`Снято: ${nick}`, 'warning'); renderAdminTab('users'); }
+async function adminBan(nick) { if (!confirm(`Забанить ${nick}?`)) return; if (dbReady) await fbSet('banned/' + nick, true); toast(`Забанен: ${nick}`, 'warning'); renderAdminTab('users'); }
+async function adminUnban(nick) { if (dbReady) await fbRemove('banned/' + nick); toast(`Разбанен: ${nick}`, 'success'); renderAdminTab('users'); }
+async function adminPromote(nick) { if (!isSuperAdmin(state.user.nick)) return; if (dbReady) await fbSet('mods/' + nick, true); toast(`🛡 ${nick} — модератор`, 'success'); renderAdminTab('users'); }
+async function adminDemote(nick) { if (!isSuperAdmin(state.user.nick)) return; if (dbReady) await fbRemove('mods/' + nick); toast(`Снято: ${nick}`, 'warning'); renderAdminTab('users'); }
 async function adminToggleHide(adId) {
+  if (!dbReady) return;
   if (state.hidden.includes(Number(adId))) await fbRemove('hidden/' + adId);
   else await fbSet('hidden/' + adId, true);
   renderAdminTab('ads');
@@ -1751,7 +1741,7 @@ async function adminResetAll() {
   if (!confirm('УДАЛИТЬ ВСЁ?')) return;
   if (!confirm('Точно? Все данные исчезнут.')) return;
   const keys = ['users','servers','chats','reviews','banned','mods','hidden','online'];
-  for (const k of keys) { try { await fbRemove(k); } catch (e) {} }
+  for (const k of keys) { if (dbReady) { try { await fbRemove(k); } catch (e) {} } }
   localStorage.clear();
   location.reload();
 }
@@ -1784,7 +1774,6 @@ function initApp() {
 function init() {
   applyTheme(getTheme());
 
-  // Кнопка темы
   $('#themeBtn').addEventListener('click', () => {
     const order = ['violet', 'dark', 'light'];
     const names = { violet: 'Сиреневая', dark: 'Тёмная', light: 'Светлая' };
@@ -1794,7 +1783,6 @@ function init() {
     toast('Тема: ' + names[next], 'info', 'fa-palette');
   });
 
-  // Обработчики
   $$('.auth-tab').forEach(tab => tab.addEventListener('click', () => {
     $$('.auth-tab').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
@@ -1833,10 +1821,15 @@ function init() {
     if (e.key === 'ArrowRight' && $('#photoViewer').classList.contains('active')) nextPhoto();
   });
 
+  // Подписки
+  if (dbReady) {
+    subUsers(); subServers(); subChats(); subReviews(); subBanned(); subMods(); subHidden(); subOnline();
+  }
+
   // Сессия
   const session = localStorage.getItem('ic_session_v6');
   (async () => {
-    if (!session) {
+    if (!session || !dbReady) {
       hideLoading();
       showAuth();
       return;
@@ -1861,13 +1854,9 @@ function init() {
     }
   })();
 
-  // Подписки
-  subUsers(); subServers(); subChats(); subReviews(); subBanned(); subMods(); subHidden(); subOnline();
-
-  console.log('%c✅ IronCloud v9 — jsdelivr + fallback', 'color:#22c55e;font-size:14px;font-weight:bold;');
+  console.log('%c✅ IronCloud v9.1 — esm.sh', 'color:#22c55e;font-size:14px;font-weight:bold;');
 }
 
-// Экспорт в window для inline-обработчиков
 Object.assign(window, {
   doLogin, doRegister, doLogout, cancel2FA, verify2FA,
   openModal, closeModal, deleteAd, toggleFav,
@@ -1891,7 +1880,6 @@ try {
   showAuth();
 }
 
-// Fallback: если через 5 секунд всё ещё загрузка — показываем форму
 setTimeout(() => {
   const ls = document.getElementById('loadingScreen');
   const as = document.getElementById('authScreen');
